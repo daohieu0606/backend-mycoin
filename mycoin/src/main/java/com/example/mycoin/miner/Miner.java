@@ -2,10 +2,13 @@ package com.example.mycoin.miner;
 
 
 import com.example.mycoin.entity.Block;
+import com.example.mycoin.entity.StringUtil;
 import com.example.mycoin.entity.Transaction;
+import com.example.mycoin.util.RandomString;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.persistence.Transient;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -17,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Getter
 @Setter
@@ -32,12 +36,15 @@ public class Miner {
 
     private boolean listening = true;
 
+    @Transient
+    private static RandomString gen = new RandomString(8, ThreadLocalRandom.current());
+
     // for jackson
     public Miner() {
     }
 
-    Miner(final String name, final String address, final int port, final Block root, final List<Miner> miners) {
-        this.name = name;
+    Miner(final String address, final int port, final Block root, final List<Miner> miners) {
+        this.name = StringUtil.applySha256(gen.nextString());
         this.address = address;
         this.port = port;
         this.peers = miners;
@@ -55,7 +62,7 @@ public class Miner {
         }
 
         final int index = previousBlock.getIndex() + 1;
-        final Block block = new Block(index, previousBlock.getHash(), transactions, 6);
+        final Block block = new Block(index, previousBlock.getHash(), transactions, 6, this);
 
         block.mineBlock();
 

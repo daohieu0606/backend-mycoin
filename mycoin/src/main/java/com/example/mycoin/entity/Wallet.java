@@ -1,8 +1,10 @@
 package com.example.mycoin.entity;
 
+import com.example.mycoin.MycoinApplication;
 import com.example.mycoin.miner.MinerManager;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -102,7 +104,7 @@ public class Wallet implements Serializable {
     public float getBalance() {
         float total = 0;
 
-        for (Map.Entry<String, TransactionOutput> item: MinerManager.getInstance().getUTXOs().entrySet()){
+        for (Map.Entry<String, TransactionOutput> item: MycoinApplication.minerManager.getUTXOs().entrySet()){
             TransactionOutput UTXO = item.getValue();
             if(UTXO.isMine(publicKey)) { //if output belongs to me ( if coins belong to me )
                 UTXOs.put(UTXO.id,UTXO); //add it to our list of unspent transactions.

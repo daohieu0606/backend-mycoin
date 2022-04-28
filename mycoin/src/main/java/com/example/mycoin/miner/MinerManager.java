@@ -5,37 +5,31 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@Slf4j
 @Getter
 @Setter
 public class MinerManager {
     private List<Miner> miners;
     private final Block root;
     private List<Block> blockchain;
+    private List<Transaction> transactions;
     private List<Wallet> wallets;
     private HashMap<String, TransactionOutput> UTXOs;
     private float minimumTransaction;
     private Transaction genesisTransaction;
 
-    private MinerManager() {
+    public MinerManager() {
         miners = new ArrayList<>();
         blockchain = new ArrayList<>();
+        transactions = new ArrayList<>();
         wallets = new ArrayList<>();
         UTXOs = new HashMap<>();
         minimumTransaction = 1;
         root = createGenesisBlock();
-    }
-
-    private static MinerManager instance = null;
-
-    public static MinerManager getInstance() {
-        if(instance == null)
-            instance = new MinerManager();
-        return instance;
     }
 
     private Block createGenesisBlock() {
@@ -71,15 +65,39 @@ public class MinerManager {
         List<Transaction> transactions = new ArrayList<>();
         transactions.add(genesisTransaction);
 
-        Block genesis = new Block(0, null, transactions, 6);
+        Block genesis = new Block(0, null, transactions, 6, null);
+        genesis.setHash("ROOT");
         return genesis;
     }
 
-    public Miner addMiner(String name, int port) {
-        Miner a = new Miner(name, "localhost", port, root, miners);
+    public Wallet getWalletFromPrivateKey(String privateKeyStr) {
+        for(var wallet: wallets) {
+            if(wallet.getPrivateKeyStr().equals(privateKeyStr))
+                return wallet;
+        }
+        return null;
+    }
+
+    public Miner addMiner(int port) {
+        if(existMinerAtPort(port)) {
+            throw new RuntimeException("Have existed miner at port " + String.valueOf(port));
+        }
+
+        Miner a = new Miner("localhost", port, root, miners);
         a.startHost();
         miners.add(a);
         return a;
+    }
+
+    private boolean existMinerAtPort(int port) {
+        if(miners == null || miners.size() == 0)
+            return false;
+
+        for (var miner: miners)
+            if(miner.getPort() == port)
+                return true;
+
+        return false;
     }
 
     public Miner getMiner(String name) {
@@ -126,5 +144,18 @@ public class MinerManager {
             return miner.createAndMineBlock(transactions);
         }
         return null;
+    }
+
+    public List<Transaction> getHistoryTransactions(PublicKey publicKey) {
+        if(transactions == null || transactions.size() == 0)
+            return null;
+
+        var result = new ArrayList<Transaction>();
+        for (var transaction: transactions) {
+            if(transaction.sender.equals(publicKey) || transaction.recipient.equals(publicKey))
+                result.add(transaction);
+        }
+
+        return result;
     }
 }

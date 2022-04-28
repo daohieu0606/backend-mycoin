@@ -1,6 +1,8 @@
 package com.example.mycoin.entity;
 
+import com.example.mycoin.MycoinApplication;
 import com.example.mycoin.miner.MinerManager;
+import com.example.mycoin.util.RandomString;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.Transient;
@@ -8,7 +10,9 @@ import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Transaction implements Serializable {
     private static final long serialVersionUID = 2L;
@@ -18,13 +22,13 @@ public class Transaction implements Serializable {
     public PublicKey recipient;
     public float value;
     public byte[] signature;
+    public long timeStamp;
 
     public List<TransactionInput> inputs = new ArrayList<TransactionInput>();
     public List<TransactionOutput> outputs = new ArrayList<TransactionOutput>();
 
-    @Autowired
     @Transient
-    private MinerManager minerManager;
+    private static RandomString gen = new RandomString(8, ThreadLocalRandom.current());
 
     private static int sequence = 0; //A rough count of how many transactions have been generated
 
@@ -34,6 +38,12 @@ public class Transaction implements Serializable {
         this.recipient = to;
         this.value = value;
         this.inputs = inputs;
+        this.timeStamp = new Date().getTime();
+
+        //TODO: remove hardcode id
+        if(gen == null)
+            gen = new RandomString(8, ThreadLocalRandom.current());
+        this.transactionId = StringUtil.applySha256(gen.nextString());
     }
 
     public boolean processTransaction() {
@@ -41,6 +51,8 @@ public class Transaction implements Serializable {
             System.out.println("#Transaction Signature failed to verify");
             return false;
         }
+
+        var minerManager = MycoinApplication.minerManager;
 
         //Gathers transaction inputs (Making sure they are unspent):
         for(TransactionInput i : inputs) {

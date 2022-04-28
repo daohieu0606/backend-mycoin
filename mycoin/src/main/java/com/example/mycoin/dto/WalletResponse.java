@@ -8,4 +8,5 @@ import lombok.Setter;
 public class WalletResponse {
     private String privateKey;
     private String publicKey;
+    private float balance;
 }

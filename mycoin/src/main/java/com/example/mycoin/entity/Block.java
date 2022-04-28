@@ -1,6 +1,7 @@
 package com.example.mycoin.entity;
 
 
+import com.example.mycoin.miner.Miner;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -16,21 +17,24 @@ import java.util.List;
 public class Block implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    public int index;
-    public String hash;
-    public String previousHash;
-    public long timeStamp;
-    public List<Transaction> transactions = new ArrayList<Transaction>();
-    public int difficulty;
-    public int nonce;
+    private int index;
+    private String hash;
+    private String previousHash;
+    private long timeStamp;
+    private List<Transaction> transactions = new ArrayList<Transaction>();
+    private int difficulty;
+    private int nonce;
+    private Miner miner;
 
     public Block(int index,
                  String previousHash,
                  List<Transaction> transactions,
-                 int difficulty) {
+                 int difficulty,
+                 Miner miner) {
         this.index = index;
         this.previousHash = previousHash;
         this.timeStamp = new Date().getTime();
+        this.miner = miner;
         if(transactions != null) {
             for(var transaction: transactions) {
                 if(previousHash != null) {
@@ -98,4 +102,15 @@ public class Block implements Serializable {
         return hex;
     }
 
+    public float getTransactionsValue() {
+        if(transactions == null || transactions.size() == 0)
+            return 0.0f;
+
+        float value = 0.0f;
+        for(var transaction: transactions){
+            value += transaction.value;
+        }
+
+        return value;
+    }
 }

@@ -9,6 +9,7 @@ import com.example.mycoin.miner.Miner;
 import com.example.mycoin.miner.MinerManager;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,9 @@ public class MinerController {
     @PostMapping("/miners")
     public ResponseEntity<?> addMiner(@RequestParam("port") int port) {
         var miner = minerManager.addMiner(port);
+
+        if(miner == null)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("can not create miner. maybe this port is existed");
 
         return ResponseEntity.ok(modelMapper.map(miner, MinerResponse.class));
     }

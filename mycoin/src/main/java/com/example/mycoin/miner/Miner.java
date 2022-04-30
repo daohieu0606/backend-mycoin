@@ -12,6 +12,7 @@ import javax.persistence.Transient;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -24,15 +25,15 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Getter
 @Setter
-public class Miner {
+public class Miner implements Serializable {
     private String name;
     private String address;
     private int port;
     private List<Miner> peers;
     private List<Block> blockchain = new ArrayList<>();
 
-    private ServerSocket serverSocket;
-    private ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(10);
+    private transient ServerSocket serverSocket;
+    private transient ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(10);
 
     private boolean listening = true;
 

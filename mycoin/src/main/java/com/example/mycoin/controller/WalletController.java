@@ -75,21 +75,29 @@ public class WalletController {
     public ResponseEntity<?> sendCoin(@RequestParam String senderPrivateKey,
                                       @RequestParam String receiverPublicKey,
                                       @RequestParam float coin) {
-//        senderPrivateKey = senderPrivateKey.replace(' ', '+');
-//        receiverPublicKey = receiverPublicKey.replace(' ', '+');
-//        Wallet sender = BlockChainState.getWalletFromPrivateKey(senderPrivateKey);
-//        Wallet receiver = BlockChainState.getWalletFromPublicKey(receiverPublicKey);
-
-        //TODO:
-        Wallet sender = minerManager.getWallets().get(0);
-        Wallet receiver = minerManager.getWallets().get(1);
+        senderPrivateKey = senderPrivateKey.replace(' ', '+');
+        receiverPublicKey = receiverPublicKey.replace(' ', '+');
+        Wallet sender = minerManager.getWalletFromPrivateKey(senderPrivateKey);
+        Wallet receiver = minerManager.getWalletFromPublicKey(receiverPublicKey);
 
 
         if(sender == null) {
-            ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("sender address is not valid");
+        }
+
+        if(sender.getPublicKeyStr().equals(receiverPublicKey)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("receiver address must difficult to sender address");
+        }
+
+        if(receiver == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("receiver address is not valid");
         }
 
         var transaction = sender.createAndSignTransaction(receiver.getPublicKey(), coin);
+        if(transaction == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("can not create a transaction. maybe you have not enough funds to send");
+        }
 
         //TODO:
         var transactions = new ArrayList<Transaction>();
@@ -97,15 +105,27 @@ public class WalletController {
 
         var newBlock = minerManager.createBlock(transactions);
 
-        if(newBlock != null) {
-            minerManager.getBlockchain().add(newBlock);
-
-            for(var item: transactions){
-                minerManager.getTransactions().add(item);
-            }
+        if(newBlock == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("can not create a block. please contact admin");
         }
 
-        return ResponseEntity.ok("done");
+        minerManager.getBlockchain().add(newBlock);
+
+        for(var item: transactions){
+            minerManager.getTransactions().add(item);
+        }
+
+        //TODO: duplicate code
+        var model = new TransactionResponse();
+
+        model.setSender(StringUtil.getStringFromKey(transaction.sender));
+        model.setReceiver(StringUtil.getStringFromKey(transaction.recipient));
+        model.setValue(transaction.value);
+        model.setId(transaction.transactionId);
+        model.setTimeStamp(transaction.timeStamp);
+
+        return ResponseEntity.ok(model);
     }
 
     @GetMapping("/wallets/history")

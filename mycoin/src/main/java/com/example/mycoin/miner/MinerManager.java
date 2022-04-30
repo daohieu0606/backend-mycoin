@@ -80,7 +80,7 @@ public class MinerManager {
 
     public Miner addMiner(int port) {
         if(existMinerAtPort(port)) {
-            throw new RuntimeException("Have existed miner at port " + String.valueOf(port));
+            return null;
         }
 
         Miner a = new Miner("localhost", port, root, miners);
@@ -157,5 +157,13 @@ public class MinerManager {
         }
 
         return result;
+    }
+
+    public Wallet getWalletFromPublicKey(String publicKey) {
+        for (var wallet: wallets)
+            if(wallet.getPublicKeyStr().equals(publicKey))
+                return wallet;
+
+        return null;
     }
 }
